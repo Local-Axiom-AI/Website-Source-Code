@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Create Account | Local Axiom AI</title>
+<style>
+/* ---------- same base styles as before ---------- */
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#181818;color:#d4d4d4;}
+.app-container{display:flex;height:100vh;}
+.sidebar{width:220px;background:#181818;padding:20px;border-right:1px solid #3c3c3c;}
+.sidebar h2{margin:0 0 15px;color:#66aaff;}
+.sidebar a{display:block;margin:10px 0;color:#aaa;text-decoration:none;}
+.sidebar a:hover{color:#fff;}
+.container{flex:1;display:flex;flex-direction:column;}
+.header{padding:20px;background:#181818;border-bottom:1px solid #3c3c3c;}
+.header h1{margin:0;color:#66aaff;}
+.main-content{flex:1;padding:20px;overflow-y:auto;}
+.section{margin-bottom:40px;}
+.section h2{color:#66aaff;margin-bottom:10px;}
+.section p{line-height:1.6;}
+.form-group{margin-bottom:16px;}
+label{display:block;margin-bottom:4px;font-weight:600;}
+input[type="text"]{width:100%;padding:8px 12px;border:none;border-radius:4px;background:#2c2c2c;color:#d4d4d4;}
+button{background:#007acc;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:.95em;}
+button:hover{background:#005fa3;}
+button:focus{outline:2px solid #fff;}
+.link{color:#66aaff;text-decoration:none;}
+.link:hover{color:#fff;}
+.footer{padding:10px 15px;font-size:.9em;color:#aaa;background:#2c2c2c;display:flex;justify-content:center;align-items:center;}
+.footer a{color:#66aaff;text-decoration:none;}
+.footer a:hover{text-decoration:underline;}
+@media(max-width:768px){ .sidebar{display:none;} }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Local Axiom AI</h2>
+    <a href="/">Home</a>
+    <a href="/try">Try It</a>
+    <a href="/q_a">About</a>
+    <a href="/api/docs">API Docs</a>
+  </div>
+  <!-- Main content -->
+  <div class="container">
+    <div class="header"><h1>Create Account</h1></div>
+    <div class="main-content">
+      <div class="section">
+        <h2>Generate your account number</h2>
+        <p>
+          You'll receive a 64 digit account number that you must keep private.  
+          <strong>Do not share it: if you lose it, you'll need to create a new account.</strong>
+        </p>
+        <div class="form-group">
+          <label for="acc">Your account number</label>
+          <input type="text" id="acc" readonly maxlength="64">
+          <button id="copy-btn" style="margin-top:6px;">Copy</button>
+        </div>
+        <p id="copy-msg" style="color:#66aaff;margin-top:8px;"></p>
+        <!-- Status message for the POST request -->
+        <p id="status-msg" style="color:#ffa500;margin-top:8px;"></p>
+        <button id="continue-btn" style="margin-top:12px;">Done: Sign In</button>
+        <p style="margin-top:12px;">
+          <a class="link" href="signin.html">Already have an account? Sign in</a>
+        </p>
+      </div>
+    </div>
+    <div class="footer"><p><a href="/privacy">Privacy Policy</a> | <a href="/tos">Terms of Service</a></p></div>
+  </div>
+</div>
+<script>
+/* ---------- 64-digit random account number generator ---------- */
+function generateAccountNumber() {
+  const digits = new Uint8Array(64);
+  crypto.getRandomValues(digits);
+  let result = '';
+  for (let i = 0; i < 64; i++) {
+    result += (digits[i] % 10).toString();
+  }
+  return result;
+}
+// Generate on page load
+const accInput = document.getElementById('acc');
+const accountNumber = generateAccountNumber();
+accInput.value = accountNumber;
+
+// Copy button
+document.getElementById('copy-btn').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(accountNumber);
+    document.getElementById('copy-msg').textContent = 'Copied!';
+    setTimeout(() => { document.getElementById('copy-msg').textContent = ''; }, 1500);
+  } catch (e) {
+    document.getElementById('copy-msg').textContent = 'Copy failed';
+    setTimeout(() => { document.getElementById('copy-msg').textContent = ''; }, 1500);
+  }
+});
+
+/* ---------- Send account number to backend ---------- */
+async function postAccountNumber() {
+  const statusEl = document.getElementById('status-msg');
+  statusEl.textContent = 'Submitting…';
+  try {
+    const response = await fetch('/add_account_number', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_number: accountNumber })
+    });
+
+    if (!response.ok) {
+      // Grab any error message from the server
+      const err = await response.json();
+      throw new Error(err.error || 'Unknown error');
+    }
+    statusEl.style.color = '#00ff00';
+    statusEl.textContent = 'Account registered!';
+    return true;
+  } catch (err) {
+    console.error(err);
+    statusEl.style.color = '#ff0000';
+    statusEl.textContent = 'Error: ' + err.message;
+    return false;
+  }
+}
+
+// Continue button
+document.getElementById('continue-btn').addEventListener('click', async () => {
+  // Prevent duplicate clicks while the request is in flight
+  const btn = this;
+  btn.disabled = true;
+
+  const ok = await postAccountNumber();
+  if (ok) {
+    // Only redirect if the backend stored the number successfully
+    window.location.href = 'signin.html';
+  } else {
+    // Re-enable button on failure
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

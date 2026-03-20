@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Local Axiom AI - Maintenance</title>
+<style>
+/* -------------------------------------------------- */
+/* 1. Base Styles – all plain ASCII, no external fonts           */
+/* -------------------------------------------------- */
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#181818;color:#d4d4d4;}
+.app-container{display:flex;height:100vh;}
+.sidebar{width:220px;background:#181818;padding:20px;border-right:1px solid #3c3c3c;}
+.sidebar h2{margin:0 0 15px;color:#66aaff;}
+.sidebar a{display:block;margin:10px 0;color:#aaa;text-decoration:none;}
+.sidebar a:hover{color:#fff;}
+.container{flex:1;display:flex;flex-direction:column;}
+.header{padding:20px;background:#181818;border-bottom:1px solid #3c3c3c;}
+.header h1{margin:0;color:#66aaff;}
+.main-content{flex:1;padding:20px;overflow-y:auto;}
+.section{margin-bottom:40px;}
+.section h2{color:#66aaff;margin-bottom:10px;}
+.section p{line-height:1.6;}
+.features{display:flex;gap:20px;flex-wrap:wrap;}
+.card{
+  background:#252525;border-radius:8px;padding:20px;text-align:center;
+  transition:transform .15s ease,box-shadow .15s ease;display:flex;
+  flex-direction:column;justify-content:flex-start;align-items:center;
+  color:#d4d4d4;min-height:250px; /* keeps cards the same height */
+}
+.card:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.card a{color:#66aaff;text-decoration:none;font-weight:600;margin-top:12px;}
+.card a:hover{color:#fff;}
+.icon{font-size:48px;margin-bottom:12px;}  /* plain text icon below */
+.copy-btn{
+  background:#007acc;color:#fff;border:none;padding:6px 12px;margin-top:8px;
+  border-radius:4px;cursor:pointer;font-size:.9em;
+}
+.copy-btn:focus{outline:2px solid #fff;}
+.code-block{
+  background:#272727;padding:12px 16px;border-radius:6px;overflow:auto;
+  font-family:monospace;font-size:.92em;color:#f1f1f1;position:relative;
+}
+.code-block button{
+  position:absolute;top:8px;left:16px;background:#007acc;color:#fff;
+  border:none;padding:4px 8px;font-size:.8em;border-radius:4px;cursor:pointer;
+}
+.code-block button:focus{outline:2px solid #fff;}
+.footer{padding:10px 15px;font-size:.9em;color:#aaa;background:#2c2c2c;
+  display:flex;justify-content:center;align-items:center;}
+.footer a{color:#66aaff;text-decoration:none;}
+.footer a:hover{text-decoration:underline;}
+@media(max-width:768px){ .features{flex-direction:column;} }
+
+/* Maintenance Page Specific Styles */
+.maintenance-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  height: 100%;
+}
+.maintenance-icon {
+  font-size: 80px;
+  margin-bottom: 30px;
+  color: #66aaff;
+}
+.maintenance-title {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: #66aaff;
+}
+.maintenance-message {
+  font-size: 1.2rem;
+  max-width: 700px;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+.maintenance-eta {
+  background: #252525;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border: 1px solid #3c3c3c;
+}
+.eta-title {
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  color: #66aaff;
+}
+.eta-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #fff;
+}
+.maintenance-info {
+  background: #252525;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 30px;
+  border: 1px solid #3c3c3c;
+  max-width: 700px;
+}
+.maintenance-info h3 {
+  color: #66aaff;
+  margin-top: 0;
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Local Axiom AI</h2>
+    <a href="/">Home</a>
+    <a href="/try">Try It</a>
+    <a href="/q_a">About</a>
+    <a href="/api/docs">API Docs</a>
+  </div>
+  <!-- Main content -->
+  <div class="container">
+    <div class="header"><h1>Local Axiom AI Maintenance</h1></div>
+    <div class="main-content">
+      <div class="maintenance-container">
+        <h2 class="maintenance-title">System Maintenance</h2>
+        <p class="maintenance-message">
+          We're currently performing maintenance on our servers. 
+          The service will be temporarily unavailable while we upgrade our infrastructure.
+        </p>
+        
+        <div class="maintenance-eta">
+          <div class="eta-title">Estimated Time of Completion</div>
+          <div class="eta-value">Unknown</div>
+        </div>
+        
+        <p class="maintenance-message">
+          We apologize for any inconvenience this may cause. Our team is working 
+          diligently to complete the maintenance as quickly as possible.
+        </p>
+        
+        <div class="maintenance-info">
+          <h3>What's happening?</h3>
+          <p>
+            During this maintenance window, all API requests will return a 503 Service Unavailable error. 
+            This is a scheduled upgrade to improve performance and add new features.
+          </p>
+          <p>
+            We'll be updating our servers with the latest security patches and optimizing our infrastructure 
+            for better response times.
+          </p>
+        </div>
+        
+        <p class="maintenance-message">
+          For urgent matters, please contact our support team at <a href="mailto:local.axiom.ai@protonmail.com">local.axiom.ai@protonmail.com</a>.
+        </p>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p><a href="/privacy">Privacy Policy</a> | <a href="/tos">Terms of Service</a></p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

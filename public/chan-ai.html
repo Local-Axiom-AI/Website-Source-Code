@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chan AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* 1. Global Styles */
+body {
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #181818;            /* VS Code dark */
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    color: #d4d4d4;                 /* VS Code text colour */
+}
+
+/* 2. App Container */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 3. Sidebar */
+.sidebar {
+    width: 280px;
+    background: #252526;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #3c3c3c;
+    padding: 15px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+.sidebar-header {
+    margin-bottom: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+}
+.new-chat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.new-chat-row button {
+    flex: 1;
+    padding: 12px;
+    background: #007acc; /* VS Code blue */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+.new-chat-row button:hover {
+    background: #005f9e;
+    transform: translateY(-1px);
+}
+
+/* 4. Main Chat Area */
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    flex: 1;
+    background: #181818;
+}
+.chatbox {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: #3c3c3c transparent;
+}
+.chatbox h1 { font-size: 2rem; margin-bottom: 1rem; }
+.chatbox p { margin-bottom: 1rem; line-height: 1.6; }
+.chatbox a {
+    color: #66aaff;
+    text-decoration: none;
+    font-weight: bold;
+}
+.chatbox a:hover { text-decoration: underline; }
+.chatbox .tos-link {
+    font-size: 0.9rem;
+    color: #66aaff;
+    cursor: pointer;
+}
+
+/* 5. Modal Overlay */
+.model-modal {
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.5);
+    display:none; /* hidden by default */
+    align-items:center;
+    justify-content:center;
+}
+.model-modal .content {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #252526 !important;
+    background-color: #252526 !important;
+    border-radius: 8px;
+    padding: 1.5rem;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    color: #fff;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+.model-modal .close-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: #fff;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.model-modal .close-btn:hover { color: #fff; }
+
+/* 6. Footer (optional) */
+footer {
+    background: #2c2c2c;
+    padding: 8px 15px;
+    color: #fff;
+    font-size: 0.9em;
+    text-align: center;
+}
+footer a { color: #66aaff; text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* 7. Responsive tweaks */
+@media (max-width: 480px) {
+    .model-modal .content { padding: 1rem; width: 100%; margin: 0; }
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">Chan AI</div>
+        <div class="new-chat-row">
+            <button id="tryBtn">Try it now</button>
+        </div>
+    </div>
+    <!-- Main Content -->
+    <div class="container">
+        <div class="chatbox">
+            <h1>Introducing Chan AI</h1>
+            <p><strong>Fine-tuned on Qwen3:4B</strong> with 16-bit LoRA.</p>
+            <p>Training took <strong>4.5 days</strong> on an <strong>RTX 3090</strong>.</p>
+            <p>Dataset: <strong>Several hundred million tokens</strong> of text-only 4chan posts.</p>
+            <p>This is our first model that we trained. Instead of creating the most accurate and smartest model, we purposely aimed for the worst possible model.  Only by starting at the bottom can we truly see how far we can climb.  Feel free to explore its quirks and let us know what you discover!</p>
+	    <p>We also created a new acronym(AI) not as in artificial intelligence but as artificial idiocy</p>
+            <p>Use the <em>Try it now</em> then change the model via the button on the left and select chan ai to experiment with the model!</p>
+            <p class="tos-link" id="openTermsLink">Model Terms &amp; Conditions</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal – Model Terms -->
+<div id="termsModal" class="model-modal">
+    <div class="content">
+        <button class="close-btn" id="closeTermsBtn">X</button>
+        <h2>Model Terms & Conditions</h2>
+        <p>By interacting with this model you agree that you may ask any question or prompt that does not violate the following:</p>
+        <ul>
+            <li>Any content that is illegal or encourages illegal activity.</li>
+        </ul>
+        <p>All other content is permitted. Use responsibly.</p>
+    </div>
+</div>
+
+<script>
+/* Toggle modal visibility */
+function toggleModal(modal, show) {
+    modal.style.display = show ? 'flex' : 'none';
+}
+
+/* Elements */
+const termsModal    = document.getElementById('termsModal');
+const tryBtn        = document.getElementById('tryBtn');
+const closeTermsBtn = document.getElementById('closeTermsBtn');
+const openTermsLink = document.getElementById('openTermsLink');
+
+/* Navigation to /try */
+tryBtn.addEventListener('click', () => {
+    window.location.href = '/try';
+});
+
+/* Open/close terms modal */
+openTermsLink.addEventListener('click', () => toggleModal(termsModal, true));
+closeTermsBtn.addEventListener('click', () => toggleModal(termsModal, false));
+termsModal.addEventListener('click', e => {
+    if (e.target === termsModal) toggleModal(termsModal, false);
+});
+</script>
+</body>
+</html>

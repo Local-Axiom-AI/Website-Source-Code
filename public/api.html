@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Local Axiom AI API Documentation</title>
+<style>
+/* ----------------------------- */
+/* 1. Base Styles – all plain ASCII, no external fonts           */
+/* ----------------------------- */
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#181818;color:#d4d4d4;}
+.app-container{display:flex;height:100vh;}
+.sidebar{width:220px;background:#181818;padding:20px;border-right:1px solid #3c3c3c;}
+.sidebar h2{margin:0 0 15px;color:#66aaff;}
+.sidebar a{display:block;margin:10px 0;color:#aaa;text-decoration:none;}
+.sidebar a:hover{color:#fff;}
+.container{flex:1;display:flex;flex-direction:column;}
+.header{padding:20px;background:#181818;border-bottom:1px solid #3c3c3c;}
+.header h1{margin:0;color:#66aaff;}
+.main-content{flex:1;padding:20px;overflow-y:auto;}
+.section{margin-bottom:40px;}
+.section h2{color:#66aaff;margin-bottom:10px;}
+.section p{line-height:1.6;}
+.features{display:flex;gap:20px;flex-wrap:wrap;}
+.card{
+  background:#252525;border-radius:8px;padding:20px;text-align:center;
+  transition:transform .15s ease,box-shadow .15s ease;display:flex;
+  flex-direction:column;justify-content:flex-start;align-items:center;
+  color:#d4d4d4;min-height:250px; /* keeps cards the same height */
+}
+.card:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.card a{color:#66aaff;text-decoration:none;font-weight:600;margin-top:12px;}
+.card a:hover{color:#fff;}
+.icon{font-size:48px;margin-bottom:12px;}  /* plain text icon below */
+.copy-btn{
+  background:#007acc;color:#fff;border:none;padding:6px 12px;margin-top:8px;
+  border-radius:4px;cursor:pointer;font-size:.9em;
+}
+.copy-btn:focus{outline:2px solid #fff;}
+.code-block{
+  background:#272727;padding:12px 16px;border-radius:6px;overflow:auto;
+  font-family:monospace;font-size:.92em;color:#f1f1f1;position:relative;
+}
+.code-block button{
+  position:absolute;top:8px;left:16px;background:#007acc;color:#fff;
+  border:none;padding:4px 8px;font-size:.8em;border-radius:4px;cursor:pointer;
+}
+.code-block button:focus{outline:2px solid #fff;}
+.footer{padding:10px 15px;font-size:.9em;color:#aaa;background:#2c2c2c;
+  display:flex;justify-content:center;align-items:center;}
+.footer a{color:#66aaff;text-decoration:none;}
+.footer a:hover{text-decoration:underline;}
+@media(max-width:768px){ .features{flex-direction:column;} }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Local Axiom AI</h2>
+    <a href="/">Home</a>
+    <a href="/try">Try It</a>
+    <a href="/q_a">About</a>
+    <a href="/api/docs">API Docs</a>
+  </div>
+  <!-- Main content -->
+  <div class="container">
+    <div class="header"><h1>Local Axiom AI API Documentation</h1></div>
+    <div class="main-content">
+      <!-- ----------------------------- -->
+      <!-- Introduction -->
+      <!-- ----------------------------- -->
+      <div class="section">
+        <h2>Introduction</h2>
+        <p>
+          The Local Axiom API lets you send conversational prompts to a AI model and receive instant responses.  
+          All processing is performed on our own servers, keeping your data private.  Requests may be slow, but the
+          API is fully functional over the clearnet right now.
+        </p>
+      </div>
+      <!-- ----------------------------- -->
+      <!-- Authentication & Rate Limiting -->
+      <!-- ----------------------------- -->
+      <div class="section">
+        <h2>Authentication & Rate Limiting</h2>
+        <p>
+          <strong>No API key is required.</strong>  Instead, each user is identified by a 64-digit account number that you receive when you create an account on
+          <code>local-axiom.com</code>.  The account number is sent in the request body as <code>sessionId</code>.
+          The server uses this field to enforce per-user rate limits.  Requests that omit the field or supply an invalid
+          account number will be rejected with <code>401 Unauthorized</code>.
+        </p>
+        <p>
+          Example request body fragment:
+          <pre>{ "sessionId": "123456789 etc" }</pre>
+        </p>
+      </div>
+      <!-- ----------------------------- -->
+      <!-- Request Format -->
+      <!-- ----------------------------- -->
+      <div class="section">
+        <h2>Request Format</h2>
+        <p>
+          Send a <code>POST</code> request with <code>Content-Type: application/json</code> to:
+        </p>
+        <pre>https://local-axiom.com/api/chat</pre>
+        <p>
+          The JSON payload must contain the following keys:
+        </p>
+        <ul>
+          <li><strong>model</strong> name of the model to use (e.g. <code>qwen3_4b</code>)</li>
+          <li><strong>sessionId</strong> your 64-digit account number</li>
+          <li><strong>system_prompt</strong> optional system prompt that sets the behaviour of the AI</li>
+          <li><strong>messages</strong> array of chat messages in the form
+            <code>{ role: "user" | "assistant", content: "..." }</code>
+          </li>
+        </ul>
+        <p>Below is a minimal example payload.</p>
+      </div>
+      <!-- ----------------------------- -->
+      <!-- Response Format -->
+      <!-- ----------------------------- -->
+      <div class="section">
+        <h2>Response Format</h2>
+        <p>
+          The API returns JSON with a single field <code>message</code>
+          containing the assistant's reply.  If the reply is a JSON object,
+          the raw string is returned and you should parse it yourself.
+        </p>
+      </div>
+      <!-- ----------------------------- -->
+      <!-- Examples -->
+      <!-- ----------------------------- -->
+      <div class="section">
+        <h2>Examples</h2>
+        <p>
+          Below are two complete examples: a simple <code>curl</code>
+          request and a Python agent that interacts with the API in
+          an automated workflow.
+        </p>
+        <!-- ----- Curl Example ----- -->
+        <h3>Curl Example</h3>
+        <div class="code-block">
+          <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
+          <pre id="curl-example">
+curl -X POST https://local-axiom.com/api/chat \\
+  -H "Content-Type: application/json" \\
+  -d '{
+  "model": "qwen3_4b",
+  "sessionId": "",
+  "system_prompt": "You are a helpful programming assistant",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Write a Python web server"
+    }
+  ]
+}'
+</pre>
+        </div>
+        <!-- ----- Python Agent Example ----- -->
+        <h3>Python Agent Example</h3>
+        <div class="code-block">
+          <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
+          <pre id="python-agent">
+import requests, json, re, urllib3, os, time
+# --------------------------------------------
+# Configuration
+# --------------------------------------------
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+API_URL = "https://local-axiom.com/api/chat"
+MODEL   = "qwen3_4b"
+# --------------------------------------------
+# 64-digit account number
+# --------------------------------------------
+ACCOUNT_NUMBER = ""
+# --------------------------------------------
+# System Prompts
+# --------------------------------------------
+DEV_PROMPT = """
+You are a Developer Agent. Your goal is to write code and create files to complete a task.
+Respond ONLY with a JSON object:
+{"action": "create_file", "path": "file.py", "content": "..."}
+{"action": "complete", "message": "finished"}
+If you receive 'CRITIC FEEDBACK', use it to fix your code.
+"""
+CRITIC_PROMPT = """
+You are a Senior Code Reviewer.
+Review the code provided by the developer.
+1. If the code is perfect and meets all requirements, respond ONLY with: {"status": "PASS"}
+2. If there are errors, bugs, or missing features, respond with: {"status": "FAIL", "feedback": "Detailed explanation of what to fix"}
+"""
+def extract_json(text):
+    try:
+        match = re.search(r'(\{.*\})', text, re.DOTALL)
+        return json.loads(match.group(1)) if match else None
+    except:
+        return None
+def call_axiom(system_prompt, messages, session_id=None):
+    payload = {
+        "model": MODEL,
+        "system_prompt": system_prompt,
+        "messages": messages,
+        "sessionId": ACCOUNT_NUMBER,
+    }
+    try:
+        response = requests.post(API_URL, json=payload, verify=False, timeout=60)
+        response.raise_for_status()
+        return response.json().get("message", ""), None
+    except Exception as e:
+        return f"Error: {e}", None
+def run_task(task_description):
+    dev_messages = [{"role": "user", "content": f"Task: {task_description}"}]
+    session_id = None
+    print(f"\n?? Starting: {task_description}")
+    for step in range(5):  # limit to 5 iterations
+        raw_res, session_id = call_axiom(DEV_PROMPT, dev_messages, session_id)
+        data = extract_json(raw_res)
+        if not data:
+            dev_messages.append({"role": "user", "content": "Please only output JSON."})
+            continue
+        if data.get("action") == "create_file":
+            path, content = data.get("path"), data.get("content")
+            with open(path, "w") as f:
+                f.write(content)
+            print(f"???  Dev: Created {path}")
+            # Critic review
+            print(f"?? Critic: Reviewing {path}...")
+            critic_input = [{"role": "user",
+                             "content": f"Task was: {task_description}\nCode written:\n{content}"}]
+            critic_res, _= call_axiom(CRITIC_PROMPT, critic_input, session_id)
+            review = extract_json(critic_res)
+            if review and review.get("status") == "PASS":
+                print("? Critic: Code looks good! Task Complete.")
+                return
+            elif review and review.get("status") == "FAIL":
+                feedback = review.get("feedback")
+                print(f"? Critic Feedback: {feedback}")
+                dev_messages.append({"role": "assistant", "content": raw_res})
+                dev_messages.append({"role": "user",
+                                     "content": f"CRITIC FEEDBACK: {feedback}. Please fix the code and recreate the file."})
+            else:
+                print("?? Critic gave invalid response, assuming pass.")
+                return
+        elif data.get("action") == "complete":
+            print(f"? Dev marked task as complete.")
+            break
+if __name__ == "__main__":
+    task = input("Enter task: ")
+    if task:
+        run_task(task)
+          </pre>
+        </div>
+      </div>
+      <!-- ----------------------------- -->
+      <!-- FAQ -->
+      <!-- ----------------------------- -->
+      <div class="section">
+        <h2>FAQ</h2>
+        <h3>What models are available?</h3>
+        <p>
+          The API exposes all available models: <code>gpt_oss_20b</code> <code>gemma3_27b</code> <code>gemma3_1b</code> <code>qwen3_4b</code> <code>qwen3_coder_30b</code> <code>llama3_1_8b</code> <code>chan_AI_Uncensored</code> <code>chan_AI_Censored</code>.
+        </p>
+        <h3>Do I need an API key?</h3>
+        <p>
+          No.  The account number is all you need, the API is rate-limited per account.
+        </p>
+        <h3>How do I obtain an account number?</h3>
+        <p>
+          Sign up on <a href="https://local-axiom.com/create-account">local-axiom.com/create-account</a> and you'll receive a 64-digit string.  Keep it safe; it's the sole credential for the API.
+        </p>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p><a href="/privacy">Privacy Policy</a> | <a href="/tos">Terms of Service</a></p>
+    </div>
+  </div>
+</div>
+<script>
+/* ----------------------------- */
+/* Copy-to-clipboard for code blocks */
+/* ----------------------------- */
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const code = btn.nextElementSibling.textContent.trim();
+    try {
+      await navigator.clipboard.writeText(code);
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = original, 1500);
+    } catch (err) {
+      btn.textContent = 'Copy Failed';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    }
+  });
+});
+</script>
+</body>
+</html>

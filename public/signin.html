@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Sign In | Local Axiom AI</title>
+<style>
+/* ---------- same base styles as before ---------- */
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#181818;color:#d4d4d4;}
+.app-container{display:flex;height:100vh;}
+.sidebar{width:220px;background:#181818;padding:20px;border-right:1px solid #3c3c3c;}
+.sidebar h2{margin:0 0 15px;color:#66aaff;}
+.sidebar a{display:block;margin:10px 0;color:#aaa;text-decoration:none;}
+.sidebar a:hover{color:#fff;}
+.container{flex:1;display:flex;flex-direction:column;}
+.header{padding:20px;background:#181818;border-bottom:1px solid #3c3c3c;}
+.header h1{margin:0;color:#66aaff;}
+.main-content{flex:1;padding:20px;overflow-y:auto;}
+.section{margin-bottom:40px;}
+.section h2{color:#66aaff;margin-bottom:10px;}
+.section p{line-height:1.6;}
+.form-group{margin-bottom:16px;}
+label{display:block;margin-bottom:4px;font-weight:600;}
+input[type="text"]{width:100%;padding:8px 12px;border:none;border-radius:4px;background:#2c2c2c;color:#d4d4d4;}
+button{background:#007acc;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:.95em;}
+button:hover{background:#005fa3;}
+button:focus{outline:2px solid #fff;}
+.link{color:#66aaff;text-decoration:none;}
+.link:hover{color:#fff;}
+.footer{padding:10px 15px;font-size:.9em;color:#aaa;background:#2c2c2c;display:flex;justify-content:center;align-items:center;}
+.footer a{color:#66aaff;text-decoration:none;}
+.footer a:hover{text-decoration:underline;}
+@media(max-width:768px){ .sidebar{display:none;} }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Local Axiom AI</h2>
+    <a href="/">Home</a>
+    <a href="/try">Try It</a>
+    <a href="/q_a">About</a>
+    <a href="/api/docs">API Docs</a>
+  </div>
+  <!-- Main content -->
+  <div class="container">
+    <div class="header"><h1>Sign In</h1></div>
+    <div class="main-content">
+      <div class="section">
+        <h2>Welcome back</h2>
+        <p>Enter your 64-digit account number to continue.</p>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="acc">Account number</label>
+            <input type="text" id="acc" required autocomplete="off" placeholder="01234567890......" maxlength="64">
+          </div>
+          <button type="submit">Sign In</button>
+          <p style="margin-top:12px;">
+            <a class="link" href="/create-account">Create a new account</a>
+          </p>
+        </form>
+        <p id="msg" style="color:#ff6666;margin-top:12px;"></p>
+      </div>
+    </div>
+    <div class="footer"><p><a href="/privacy">Privacy Policy</a> | <a href="/tos">Terms of Service</a></p></div>
+  </div>
+</div>
+
+<script>
+/* ---------- Sign-in – validate 64-digit account number and look it up ---------- */
+const form = document.getElementById('login-form');
+const msg  = document.getElementById('msg');
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const accInput = document.getElementById('acc');
+  const acc = accInput.value.trim();
+
+  /* 1?? Validate format (exactly 64 decimal digits) */
+  if (!/^\d{64}$/.test(acc)) {
+    msg.textContent = 'Account number must be exactly 64 digits.';
+    msg.style.color = '#ff6666';
+    return;
+  }
+
+  /* 2?? Optional: show “checking...” */
+  msg.textContent = 'Checking account...';
+  msg.style.color = '#66aaff';
+
+  try {
+    /* 3?? Ask server whether the account exists */
+    const response = await fetch(`/lookup/${encodeURIComponent(acc)}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      // If server returns e.g., 404 or 500
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || `Server responded with ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.exists) {
+      msg.textContent = 'Account not found. Create one first.';
+      msg.style.color = '#ff6666';
+      return;
+    }
+
+    /* 4?? Store in sessionStorage – only after server says it exists */
+    sessionStorage.setItem('User', acc);
+
+    /* 5?? Success feedback */
+    msg.style.color = '#66aaff';
+    msg.textContent = 'Signed in: Redirecting...';
+
+    // Optional redirect after a short pause
+    setTimeout(() => {
+      window.location.href = '/try';  // adjust as needed
+    }, 1200);
+  } catch (err) {
+    console.error(err);
+    msg.textContent = 'Error: ' + err.message;
+    msg.style.color = '#ff6666';
+  }
+});
+</script>
+</body>
+</html>

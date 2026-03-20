@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>Local Axiom AI - Private Solutions</title>
+<style>
+/* --------------------------------------------------------------------------- */
+/* 1. Base Styles – all plain ASCII, no external fonts           */
+/* --------------------------------------------------------------------------- */
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#181818;color:#d4d4d4;}
+.app-container{display:flex;height:100vh;}
+.sidebar{width:220px;background:#181818;padding:20px;border-right:1px solid #3c3c3c;}
+.sidebar h2{margin:0 0 15px;color:#66aaff;}
+.sidebar a{display:block;margin:10px 0;color:#aaa;text-decoration:none;}
+.sidebar a:hover{color:#fff;}
+.container{flex:1;display:flex;flex-direction:column;}
+.header{padding:20px;background:#181818;border-bottom:1px solid #3c3c3c;}
+.header h1{margin:0;color:#66aaff;}
+.main-content{flex:1;padding:20px;overflow-y:auto;}
+.section{margin-bottom:40px;}
+.section h2{color:#66aaff;margin-bottom:10px;}
+.section p{line-height:1.6;}
+.features{display:flex;gap:20px;flex-wrap:wrap;}
+.card{
+  background:#252525;border-radius:8px;padding:20px;text-align:center;
+  transition:transform .15s ease,box-shadow .15s ease;display:flex;
+  flex-direction:column;justify-content:flex-start;align-items:center;
+  color:#d4d4d4;min-height:250px; /* keeps cards the same height */
+}
+.card:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.card a{color:#66aaff;text-decoration:none;font-weight:600;margin-top:12px;}
+.card a:hover{color:#fff;}
+.icon{font-size:48px;margin-bottom:12px;}  /* plain text icon below */
+.copy-btn{
+  background:#007acc;color:#fff;border:none;padding:6px 12px;margin-top:8px;
+  border-radius:4px;cursor:pointer;font-size:.9em;
+}
+.copy-btn:focus{outline:2px solid #fff;}
+.code-block{
+  background:#272727;padding:12px 16px;border-radius:6px;overflow:auto;
+  font-family:monospace;font-size:.92em;color:#f1f1f1;position:relative;
+}
+
+.signin-btn{
+  background:#007acc;color:#fff;border:none;padding:6px 12px;margin-top:8px;
+  border-radius:4px;cursor:pointer;font-size:.9em;
+}
+.signin-btn:focus{outline:2px solid #fff;}
+
+.code-block::before{
+  content:"RSA Public Key";
+  position:absolute;top:8px;right:16px;font-size:.8em;color:#aaa;
+}
+.code-block button{
+  position:absolute;top:8px;left:16px;background:#007acc;color:#fff;
+  border:none;padding:4px 8px;font-size:.8em;border-radius:4px;cursor:pointer;
+}
+.code-block button:focus{outline:2px solid #fff;}
+.footer{padding:10px 15px;font-size:.9em;color:#aaa;background:#2c2c2c;
+  display:flex;justify-content:center;align-items:center;}
+.footer a{color:#66aaff;text-decoration:none;}
+.footer a:hover{text-decoration:underline;}
+@media(max-width:768px){ .features{flex-direction:column;} }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Local Axiom AI</h2>
+    <a href="/">Home</a>
+    <a href="/try">Try It</a>
+    <a href="/q_a">About</a>
+    <a href="/api/docs">API Docs</a>
+  </div>
+  <!-- Main content -->
+  <div class="container">
+    <div class="header"><h1>Local Axiom AI</h1></div>
+    <div class="main-content">
+      <!-- --------------------------------------------------------------------- -->
+      <!-- Introduction -->
+      <!-- --------------------------------------------------------------------- -->
+      <div class="section">
+        <h2>Introduction</h2>
+        <p>We at Local Axiom are privacy-focused on delivering completely private AI.</p>
+      </div>
+      <!-- --------------------------------------------------------------------- -->
+      <!-- Contact & Services – no emojis, plain text icons      -->
+      <!-- --------------------------------------------------------------------- -->
+      <div class="section">
+        <h2>Contact & Services</h2>
+        <div class="features">
+          <!-- I2P Card -->
+          <div class="card">
+            <div class="icon" aria-label="I2P logo">I2P</div>
+            <p>Visit over I2P, keep your identity private and anonymous.</p>
+            <a href="http://jpzjhpixyfc2l4d5a5aulau5wq4fmknjgffjepewl263jv7xoofq.b32.i2p/" target="_blank" rel="noopener noreferrer">Go to I2P Site</a>
+          </div>
+          <!-- Tor Card -->
+          <div class="card">
+            <div class="icon" aria-label="Tor logo">Tor</div>
+            <p>Visit our hidden service for maximum privacy.</p>
+            <a href="http://7mh5nar5b263hck6zu2cak6qssr36nqh5jhmgavuu2kkzswxogow5oqd.onion" target="_blank" rel="noopener noreferrer">Open Tor Onion</a>
+          </div>
+        </div>
+      </div>
+      <!-- --------------------------------------------------------------------- -->
+      <!-- Privacy & Security section (new) -->
+      <!-- --------------------------------------------------------------------- -->
+      <div class="section">
+        <h2>Privacy & Security</h2>
+        <p>All interactions with AI are designed to protect your confidentiality and anonymity. The following safeguards are in place:</p>
+        <ul>
+          <li><strong>Session-based rate limiting:</strong> Each session is identified by a unique random string; rate limits are applied per session, not per IP.</li>
+          <li><strong>Ephemeral storage:</strong> Chat data resides only in RAM and is purged automatically every hour.</li>
+          <li><strong>Anonymous chat IDs:</strong> Each conversation is linked to a random, non-traceable chat ID.</li>
+          <li><strong>Strong encryption:</strong> All messages are encrypted with AES-256, preventing any third party from reading content.</li>
+          <li><strong>Dedicated infrastructure:</strong> Computation occurs on servers that we own and operate within our own facility.</li>
+        </ul>
+      </div>
+      <!-- --------------------------------------------------------------------- -->
+      <!-- Email section (plain ASCII)                                 |
+      <!-- --------------------------------------------------------------------- -->
+      <div class="section">
+        <h2>Accounts & Authentication</h2>
+        <p>Our platform uses a 64-digit account number as the sole identifier for your user profile. No usernames or passwords are required. This number is generated with cryptographicly secure means. The number is not tied only to this version of the site, it does transfer to I2P and TOR versions of the site; keep the number confidential to maintain security.</p>
+        <p>Signing in is totaly optional, but we encourage it because it will be required for adding API credits in the future.</p>
+        <a class="signin-btn" href="/sign-in">Sign In</a>
+      </div>
+
+      <div class="section">
+        <h2>Email for Encrypted Communications</h2>
+        <p>For encrypted requests use our RSA public key and share your un-encrypted RSA public key, please email us at
+           <a href="mailto:local.axiom.ai@gmail.com">local.axiom.ai@gmail.com</a>.
+           <a href="mailto:local.axiom.ai@protonmail.com">local.axiom.ai@protonmail.com</a>.
+        </p>
+      </div>
+      <!-- --------------------------------------------------------------------- -->
+      <!-- RSA Public Key (copy-button)                                |
+      <!-- --------------------------------------------------------------------- -->
+      <div class="section">
+        <h2>RSA Public Key (8 192 bit)</h2>
+        <div class="code-block">
+          <button class="copy-btn" aria-label="Copy RSA public key to clipboard">Copy Key</button>
+          <pre id="rsa-key">
+-----BEGIN PUBLIC KEY-----
+MIIEIjANBgkqhkiG9w0BAQEFAAOCBA8AMIIECgKCBAEA3AHWFjN+gO3oU2MVazTM
+rwK5lzAlzemtcCvn+If735N2ID55so7Kyd+rYy835Hyha+gilGzaIKayEv8NPw/4
+CN1qkoyNtq58fTfOCdTd53CTRvewEvD/3XEpwZ+QrIc86Lo8jBS2bCRDNRTAisCX
+4BLrPus83E2UpRrfk3yAhcgSho/lFubBuh/DolngJTyhMMBT3gcyh79LdGv55yNb
+fR905QEiHajKp2x43USjZpgDvAAydYK3wWDKJ8GBbB7FOWKBLC6KNHX4OC7T1vnN
+8uLNTD9Y37vbPDgm1foeKqYSkUllq7iLiHmrmpeI96Z48TpZAw77+5ANJdn6jzns
+csoPq0LmYspyDXBea/teIirLUAl+CkZzywiv2gfJToi3+mOOLHwhmp4rq/x78uKM
+n0d4k65z7cg0BcjITOvMNDYbsqNil8h/TCijdOiFTcTNFuGr04klO6SAUFv8RIjI
+sV/vCUPVvDFaQGkFspLiWKlWzEZoFS1OxsN+1XmZRrSPRBNQKMr/zMFV+HkxSk+5
+le9nH1YQjtGtX9hAMpNQoSW53dVBVQ/NT7lrjDYg/5k0vx8njHRLdBLNBGHdsHar
+o5D6tZyawEaFlDAvRyAZUiFY3YeYCfaJahvLxjpQJhKCg5K4l3ppI2c7NM6heNvm
+WPnNCGiS2pukXqgCHgSlPzD/OI7jH6ngonelpC2tVCV6uzLWxlVIv3Hca4XfexwM
+CyceSxFOb9Ejly08x/pNjkj8E/AQ/rBFbD1DYKHwOzeN8/lEQum24YhH1MwcWzn3
+SnA71YxxXdb5YvQPr5AvM5tHiDfOrUdD7qnp2Pw6Ilb+CcAzvmCGw++GuTyUjqGp
+YhcKBu+zuPMoVuYuMCcRqxhbjFc2slCW55Dk0cG/N3xXs3EnEm6g3Y4fnNmuT6Yc
+YNaVFhWzwwJhn9Rvj5gM9UI4qiV+sw8DK4hqhDtL4Q6KTN6Z7k5tax7cmZPFOu56
+qD1BFNV3qZKX8nrLgnC4eLe5Ibp1rYpkoEwI++p25rMmA8jGM/VjZSzhGSDdnEaV
+Z+XFbvw4Bsuv7U42qK9EgCKwo4HKclq94OuR+pCJ/vQ/u0o6y/JXCSN381zFNEpE
+TSGEweao/z1zQuNe+qMYulQIOy8URcbeCtKUFsT6UAuh4M4i5ahsoZkCGcsp+irs
+kMwnRXiNJyyTyjyYTP38rOnnFoHsQZ29AKF9eMqqAbZbOixl3heQWCJpsv7N1UjU
+3eDM54nMR4g5YE5f2GvaDVb1mib/ZPgCuSv22we6HwlUU0XY3UT5AScCYMqp19Ky
+3USVkBGWyNd4WdTJDQFhCBp9IrkTk/edPrkU6eC3MlNzcs7C3dkjL+rHGGwcmP10
+9QIDAQAB
+-----END PUBLIC KEY-----
+          </pre>
+        </div>
+      </div>
+      <!-- --------------------------------------------------------------------- -->
+      <!-- Your original Call-to-Action / About / etc.                |
+      <!-- --------------------------------------------------------------------- -->
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p><a href="/privacy">Privacy Policy</a> | <a href="/tos">Terms of Service</a></p>
+    </div>
+  </div>
+  <script>
+/* --------------------------------------------------------------------------- */
+/* Copy-to-clipboard for RSA key                                  */
+/* --------------------------------------------------------------------------- */
+const copyBtn = document.querySelector('.copy-btn');
+const rsaKey  = document.getElementById('rsa-key').textContent.trim();
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(rsaKey);
+    copyBtn.textContent = 'Copied!';
+    setTimeout(() => copyBtn.textContent = 'Copy Key', 1500);
+  } catch (err) {
+    copyBtn.textContent = 'Copy Failed';
+    setTimeout(() => copyBtn.textContent = 'Copy Key', 1500);
+  }
+});
+  </script>
+</body>
+</html>

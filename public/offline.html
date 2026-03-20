@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Local Axiom AI - Offline</title>
+<style>
+/* -------------------------------------------------- */
+/* 1. Base Styles – all plain ASCII, no external fonts           */
+/* -------------------------------------------------- */
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#181818;color:#d4d4d4;}
+.app-container{display:flex;height:100vh;}
+.sidebar{width:220px;background:#181818;padding:20px;border-right:1px solid #3c3c3c;}
+.sidebar h2{margin:0 0 15px;color:#66aaff;}
+.sidebar a{display:block;margin:10px 0;color:#aaa;text-decoration:none;}
+.sidebar a:hover{color:#fff;}
+.container{flex:1;display:flex;flex-direction:column;}
+.header{padding:20px;background:#181818;border-bottom:1px solid #3c3c3c;}
+.header h1{margin:0;color:#66aaff;}
+.main-content{flex:1;padding:20px;overflow-y:auto;}
+.section{margin-bottom:40px;}
+.section h2{color:#66aaff;margin-bottom:10px;}
+.section p{line-height:1.6;}
+.features{display:flex;gap:20px;flex-wrap:wrap;}
+.card{
+  background:#252525;border-radius:8px;padding:20px;text-align:center;
+  transition:transform .15s ease,box-shadow .15s ease;display:flex;
+  flex-direction:column;justify-content:flex-start;align-items:center;
+  color:#d4d4d4;min-height:250px; /* keeps cards the same height */
+}
+.card:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.card a{color:#66aaff;text-decoration:none;font-weight:600;margin-top:12px;}
+.card a:hover{color:#fff;}
+.icon{font-size:48px;margin-bottom:12px;}  /* plain text icon below */
+.copy-btn{
+  background:#007acc;color:#fff;border:none;padding:6px 12px;margin-top:8px;
+  border-radius:4px;cursor:pointer;font-size:.9em;
+}
+.copy-btn:focus{outline:2px solid #fff;}
+.code-block{
+  background:#272727;padding:12px 16px;border-radius:6px;overflow:auto;
+  font-family:monospace;font-size:.92em;color:#f1f1f1;position:relative;
+}
+.code-block button{
+  position:absolute;top:8px;left:16px;background:#007acc;color:#fff;
+  border:none;padding:4px 8px;font-size:.8em;border-radius:4px;cursor:pointer;
+}
+.code-block button:focus{outline:2px solid #fff;}
+.footer{padding:10px 15px;font-size:.9em;color:#aaa;background:#2c2c2c;
+  display:flex;justify-content:center;align-items:center;}
+.footer a{color:#66aaff;text-decoration:none;}
+.footer a:hover{text-decoration:underline;}
+@media(max-width:768px){ .features{flex-direction:column;} }
+
+/* Offline Page Specific Styles */
+.offline-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  height: 100%;
+}
+.offline-icon {
+  font-size: 80px;
+  margin-bottom: 30px;
+  color: #ff6b6b;
+}
+.offline-title {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: #ff6b6b;
+}
+.offline-message {
+  font-size: 1.2rem;
+  max-width: 700px;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+.offline-info {
+  background: #252525;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border: 1px solid #3c3c3c;
+  max-width: 700px;
+}
+.offline-info h3 {
+  color: #ff6b6b;
+  margin-top: 0;
+}
+.offline-actions {
+  display: flex;
+  gap: 20px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.action-btn {
+  background: #007acc;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+.action-btn:hover {
+  background: #005a9e;
+}
+.action-btn.refresh {
+  background: #28a745;
+}
+.action-btn.refresh:hover {
+  background: #218838;
+}
+.offline-status {
+  margin-top: 30px;
+  padding: 15px;
+  background: #252525;
+  border-radius: 8px;
+  border: 1px solid #3c3c3c;
+  max-width: 700px;
+}
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #3c3c3c;
+}
+.status-item:last-child {
+  border-bottom: none;
+}
+.status-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+.status-connected {
+  background: #28a745;
+}
+.status-disconnected {
+  background: #dc3545;
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Local Axiom AI</h2>
+    <a href="/">Home</a>
+    <a href="/try">Try It</a>
+    <a href="/q_a">About</a>
+    <a href="/api/docs">API Docs</a>
+  </div>
+  <!-- Main content -->
+  <div class="container">
+    <div class="header"><h1>Local Axiom AI Status</h1></div>
+    <div class="main-content">
+      <div class="offline-container">
+        <div class="offline-icon">??</div>
+        <h2 class="offline-title">Service Offline</h2>
+        <p class="offline-message">
+          It looks like there is a problem. The Local Axiom AI is currently unavailable.
+        </p>
+        
+        <div class="offline-info">
+          <h3>Connection Status</h3>
+          <p>
+            Offline.
+          </p>
+          <p>
+            No clue on why is it currently down.
+          </p>
+        </div>
+        
+        <div class="offline-actions">
+          <button class="action-btn refresh" onclick="window.location.reload()">Refresh Page</button>
+          <button class="action-btn" onclick="checkConnection()">Check Connection</button>
+          <button class="action-btn" onclick="window.location.href='/api/docs'">View Documentation</button>
+        </div>
+        
+        <div class="offline-status">
+          <h3>System Status</h3>
+          <div class="status-item">
+            <span><span class="status-indicator status-disconnected"></span> API Service</span>
+            <span>Unavailable</span>
+          </div>
+          <div class="status-item">
+            <span><span class="status-indicator status-disconnected"></span> Web Interface</span>
+            <span>Unavailable</span>
+          </div>
+          <div class="status-item">
+            <span><span class="status-indicator status-disconnected"></span> Documentation   .</span>
+            <span>Unavailable</span>
+          </div>
+        </div>
+        
+        <p class="offline-message">
+          If this happens for a prolonged amount of time contact, 
+          please contact our support team at <a href="mailto:local.axiom.ai@protonmail.com">local.axiom.ai@protonmail.com</a>.
+        </p>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p><a href="/privacy">Privacy Policy</a> | <a href="/tos">Terms of Service</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Simple connection check function
+function checkConnection() {
+  const statusItems = document.querySelectorAll('.status-item');
+  
+  // Simulate checking connection
+  statusItems[0].innerHTML = '<span><span class="status-indicator status-connected"></span> API Service</span> <span>Connected</span>';
+  statusItems[1].innerHTML = '<span><span class="status-indicator status-connected"></span> Web Interface</span> <span>Connected</span>';
+  
+  // Show a temporary message
+  const message = document.createElement('div');
+  message.textContent = 'Connection restored! Refreshing page...';
+  message.style.position = 'fixed';
+  message.style.top = '20px';
+  message.style.left = '50%';
+  message.style.transform = 'translateX(-50%)';
+  message.style.backgroundColor = '#28a745';
+  message.style.color = 'white';
+  message.style.padding = '10px 20px';
+  message.style.borderRadius = '4px';
+  message.style.zIndex = '1000';
+  
+  document.body.appendChild(message);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    document.body.removeChild(message);
+    window.location.reload();
+  }, 3000);
+}
+</script>
+</body>
+</html>

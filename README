@@ -1,0 +1,19 @@
+Local Axiom AI
+Privacy First AI Web Application 
+Source‑Code Repository (Audit‑Only)
+
+The purpose of this README is to aid auditors and security reviewers, it is not a developer guide for end‑users or a public API.
+
+You are free to:
+    • Share – copy and redistribute the material in any medium or format
+    • Adapt – remix, transform, and build upon the material
+    Under the following terms:
+    • Attribution: You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+    • Non Commercial: You may not use the material for commercial purposes.
+    • Share Alike: If you remix, transform, or build upon the material, you must distribute your contributions under the same license. 
+     
+    Link to the full license: https://creativecommons.org/licenses/by-nc-sa/4.0/  
+    
+    Audit only note: Any fork, audit report, or derivative must be released under the same CC BY‑NC‑SA 4.0 license and must not be used for commercial purposes.
+
+We did redact some of the code like our API url, do not worry it is our own website and not a third party API

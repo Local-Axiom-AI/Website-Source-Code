@@ -6,9 +6,7 @@ const axios     = require('axios');
 const Greenlock = require('greenlock-express');
 const crypto    = require('crypto');
 
-/* ---------------------------------------------------------------------------*/
-/*   Hard-coded 256-bit key (32 bytes) – keep this secret in production!  */
-/* ---------------------------------------------------------------------------*/
+/* ----------  AES-256-GCM helpers  ---------------------------- */
 let HARDCORE_KEY = Buffer.from(
   '{redacted}',
   'hex'
@@ -18,9 +16,6 @@ const BACKUP_KEY = Buffer.from(
   'hex'
 );
 
-/* ---------------------------------------------------------------------------*/
-/*   AES-256-GCM helpers                                                     */
-/* ---------------------------------------------------------------------------*/
 function encryptGCM(plaintext, key = BACKUP_KEY) {
   const iv     = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
@@ -328,7 +323,7 @@ const validModels = {
 const app = express();
 app.use(express.json());
 
-const ACCOUNT_FILE = path.resolve('{redacted}', 'account_numbers.txt');
+const ACCOUNT_FILE = path.resolve('/home/{redacted}', 'account_numbers.txt');
 const FILE_FLAGS = 'a';
 const FILE_MODE = 0o600;
 const ACCOUNT_REGEX = /^\d{10,100}$/;
@@ -410,34 +405,6 @@ app.post('/add_account_number', (req, res) => {
 /* ---------------------------------------------------------------------------*/
 /*   POST /ask                                                             */
 /* ---------------------------------------------------------------------------*/
-app.post('/ask', (req, res) => {
-  const { message, model = 'chat_small', chatId } = req.body;
-  const sessionId = getSessionId(req);
-
-  if (!message || message.length > 5_000) {
-    return res.status(400).json({ message: 'Invalid message' });
-  }
-
-  if (!validModels[model]) {
-    return res.status(400).json({ message: 'Invalid model' });
-  }
-
-  if (!chatId) {
-    return res.status(400).json({ message: 'Missing chatId' });
-  }
-
-  /* --------------------------------------------------------------------- */
-  /*   Big-model rate-limit                                               */
-  /* --------------------------------------------------------------------- */
-  const bigCheck = canUseBigModel(sessionId, model);
-  if (!bigCheck.allowed) {
-    return res.status(429).json({ message: bigCheck.reason });
-  }
-
-  /* Queue the request */
-  requestQueue.push({ chatId, message, model, res, sessionId });
-  processQueue();
-});
 
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 setInterval(async () => {
@@ -446,7 +413,6 @@ setInterval(async () => {
    * ---------------------------------------------------------- */
   console.log('?? Hourly cleanup triggered — wiping all stored data.');
   conversations = {};
-  allowedChanSessions.clear();
   bigModelUsage = {};
 
   /* ----------------------------------------------------------
@@ -570,94 +536,314 @@ function enqueue(task) {
   // Start queue processing
   processQueue();
 }
-
 /* ------------------------------------------------------------------------ */
 /*  Legacy /ask route (used by the internal /ask endpoint)                */
 /* ------------------------------------------------------------------------ */
-app.post('/ask', (req, res) => {
-  const { model, messages, prompt, stream } = req.body
-  if (!model) return res.status(400).json({ error: 'Missing model' })
-
-  const sessionId = getSessionId(req)
-  const chatId    = req.body.chat_id || Math.random().toString(36).substring(2, 10)
-
-  enqueue({
-    type:     'legacy',
-    isOllama: false,
-    chatId,
-    model,
-    message:  prompt || messages?.[0]?.content,
-    res,
-    sessionId
-  })
-})
-
-app.post('/api/chat', async (req, res) => {
-  const {
-    model,
-    system_prompt,
-    messages,
-    temperature,
-    sessionId,
-  } = req.body;
-
-  /* ---------- Basic validation ---------- */
-  if (!model) {
-    return res.status(400).json({ error: "Missing model" });
-  }
-
-  if (!Array.isArray(messages)) {
-    return res.status(400).json({ error: "Messages must be an array" });
-  }
-
-  if (!sessionId) {
-    return res.status(401).json({ error: "Missing account number" });
-  }
-
-  /* ---------- Validate account format ---------- */
-  if (!isValidAccountNumber(sessionId)) {
-    return res.status(400).json({
-      error: "Invalid account number format",
-    });
-  }
-
-  /* ---------- Check if account exists ---------- */
+app.post('/ask', async (req, res) => {
   try {
-    const exists = await isAccountNumberInFile(sessionId);
+    const { model, prompt, message, messages, chatId, sessionId } = req.body || {};
 
-    if (!exists) {
-      return res.statu25s(403).json({
-        error: "Invalid account number (not found)",
-      });
+    if (!model) {
+      return res.status(400).json({ error: 'Missing model' });
     }
+
+    const chat_id = chatId || Math.random().toString(36).slice(2, 10);
+    const session_id = sessionId || getSessionId(req);
+
+    const input = prompt ?? message ?? messages;
+
+    let finalMessages;
+
+    if (typeof input === 'string') {
+      finalMessages = [{ role: 'user', content: input }];
+    } else if (Array.isArray(input)) {
+      finalMessages = input;
+    } else {
+      return res.status(400).json({ error: 'Invalid input' });
+    }
+
+    const cleanModel = String(model).trim();
+
+    // ==================================================
+    // 🔐 STREAMING PATH
+    // ==================================================
+    if (cleanModel === 'qwen3_4b') {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.flushHeaders?.();
+
+      try {
+        const payload = {
+          model: cleanModel,
+          messages: finalMessages,
+        };
+
+        // Encrypt request (unchanged)
+        const encryptedPayload = encryptGCM(JSON.stringify(payload));
+
+        const response = await axios.post(
+          'http://{redacted}/generate-vllm',
+          encryptedPayload,
+          { responseType: 'stream' }
+        );
+
+        // ==================================================
+        // ✅ SAFE STREAM BUFFER (FIXED)
+        // ==================================================
+        let buffer = "";
+
+        response.data.on('data', (chunk) => {
+          buffer += chunk.toString();
+
+          // Split ONLY complete SSE events
+          const events = buffer.split('\n\n');
+          buffer = events.pop();
+
+          for (const event of events) {
+            const trimmed = event.trim();
+
+            if (!trimmed.startsWith('data:')) continue;
+
+            const jsonStr = trimmed.slice(6).trim();
+            if (!jsonStr) continue;
+
+            let encrypted;
+            try {
+              encrypted = JSON.parse(jsonStr);
+            } catch {
+              continue;
+            }
+
+            // ==================================================
+            // 🔓 DECRYPT (IMPORTANT FIX HERE)
+            // ==================================================
+            let plaintext;
+            try {
+              plaintext = decryptGCM(encrypted);
+            } catch (e) {
+              console.error("Decrypt failed:", e);
+              continue;
+            }
+
+            if (!plaintext || plaintext === 'undefined') continue;
+
+            // ==================================================
+            // 🧠 PARSE TOKEN OR OBJECT
+            // ==================================================
+            let output;
+
+            try {
+              output = JSON.parse(plaintext);
+            } catch {
+              output = { type: "token", token: plaintext };
+            }
+
+            // ==================================================
+            // 🚀 SEND TO CLIENT
+            // ==================================================
+            res.write(`data: ${JSON.stringify(output)}\n\n`);
+          }
+        });
+
+        response.data.on('end', () => {
+          res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
+          res.end();
+        });
+
+        response.data.on('error', (err) => {
+          console.error("Stream error:", err);
+          res.end();
+        });
+
+      } catch (error) {
+        console.error('Forwarding error:', error?.message || error);
+
+        if (!res.headersSent) {
+          return res.status(500).json({ error: 'generate-vllm failed' });
+        }
+
+        res.end();
+      }
+
+      return;
+    }
+
+    // ==================================================
+    // FALLBACK (unchanged)
+    // ==================================================
+    enqueue({
+      type: 'legacy',
+      isOllama: false,
+      chatId: chat_id,
+      model: cleanModel,
+      message: finalMessages[0].content,
+      res,
+      sessionId: session_id,
+    });
+
   } catch (err) {
-    console.error("Account check failed:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error('ASK CRASH:', err);
+
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error' });
+    } else {
+      res.end();
+    }
   }
+});
+app.post('/api/chat', async (req, res) => {
+  try {
+    const {
+      model,
+      system_prompt,
+      messages,
+      temperature,
+      sessionId,
+    } = req.body;
 
-  /* ---------- Use ONLY verified account ---------- */
-  const userId = sessionId;
+    /* ---------- Validation ---------- */
+    if (!model) {
+      return res.status(400).json({ error: "Missing model" });
+    }
 
-  /* ---------- Generate chat ID ---------- */
-  const chatId = Math.random().toString(36).substring(2, 10);
+    if (!Array.isArray(messages)) {
+      return res.status(400).json({ error: "Messages must be an array" });
+    }
 
-  /* ---------- Prepare messages ---------- */
-  const fullMessages = system_prompt
-    ? [{ role: "system", content: system_prompt }, ...messages]
-    : messages;
+    if (!sessionId) {
+      return res.status(401).json({ error: "Missing account number" });
+    }
 
-  /* ---------- Queue job ---------- */
-  enqueue({
-    type: "chat",
-    chatId,
-    model,
-    payload: {
-      messages: fullMessages,
-      temperature: temperature ?? 0.7,
-    },
-    res,
-    userId,
-  });
+    if (!isValidAccountNumber(sessionId)) {
+      return res.status(400).json({ error: "Invalid account number format" });
+    }
+
+    const exists = await isAccountNumberInFile(sessionId);
+    if (!exists) {
+      return res.status(403).json({ error: "Invalid account number (not found)" });
+    }
+
+    const userId = sessionId;
+    const chatId = Math.random().toString(36).substring(2, 10);
+
+    const fullMessages = system_prompt
+      ? [{ role: "system", content: system_prompt }, ...messages]
+      : messages;
+
+    const cleanModel = String(model).trim();
+
+    /* ==================================================
+       🚀 SPECIAL FAST PATH (NO QUEUE)
+       ================================================== */
+    if (cleanModel === "qwen3_4b") {
+      try {
+        const payload = {
+          model: cleanModel,
+          messages: fullMessages,
+          temperature: temperature ?? 0.7,
+        };
+
+        const encryptedPayload = encryptGCM(JSON.stringify(payload));
+
+        const response = await axios.post(
+          "http://{redacted}/generate-vllm",
+          encryptedPayload,
+          { responseType: "stream" }
+        );
+
+        let buffer = "";
+        let finalText = "";
+
+        response.data.on("data", (chunk) => {
+          buffer += chunk.toString();
+
+          const events = buffer.split("\n\n");
+          buffer = events.pop();
+
+          for (const event of events) {
+            const trimmed = event.trim();
+            if (!trimmed.startsWith("data:")) continue;
+
+            const jsonStr = trimmed.slice(6).trim();
+            if (!jsonStr) continue;
+
+            let encrypted;
+            try {
+              encrypted = JSON.parse(jsonStr);
+            } catch {
+              continue;
+            }
+
+            let plaintext;
+            try {
+              plaintext = decryptGCM(encrypted);
+            } catch {
+              continue;
+            }
+
+            if (!plaintext) continue;
+
+            try {
+              const obj = JSON.parse(plaintext);
+              if (obj?.token) {
+                finalText += obj.token;
+              }
+            } catch {
+              finalText += plaintext;
+            }
+          }
+        });
+
+        response.data.on("end", () => {
+          return res.json({
+            chatId,
+            model: cleanModel,
+            response: finalText,
+          });
+        });
+
+        response.data.on("error", (err) => {
+          console.error("Stream error:", err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: "qwen3_4b failed" });
+          }
+        });
+
+      } catch (err) {
+        console.error("qwen3_4b direct error:", err);
+        return res.status(500).json({ error: "qwen3_4b failed" });
+      }
+
+      return;
+    }
+
+    /* ==================================================
+       🧠 QUEUED PATH (ALL OTHER MODELS)
+       ================================================== */
+    enqueue({
+      type: "chat",
+      chatId,
+      model: cleanModel,
+      payload: {
+        messages: fullMessages,
+        temperature: temperature ?? 0.7,
+      },
+      res,
+      userId,
+      sessionId,
+    });
+
+  } catch (err) {
+    console.error("API CHAT CRASH:", err);
+
+    if (!res.headersSent) {
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    res.end();
+  }
 });
 app.get('/list', async (req, res) => {
   try {

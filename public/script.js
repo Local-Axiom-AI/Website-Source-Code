@@ -1,9 +1,8 @@
 /* ==================================================== */
-/*  CHAT STATE & INPUT HANDLING – unchanged          */
+/*  CHAT STATE & INPUT HANDLING â€“ unchanged          */
 /* ==================================================== */
 let chats = [];               // array of {chatId, messages[]}
 let currentChatIndex = null;   // index of the chat currently displayed
-
 /* ---------------------------------------------------- */
 /*  Input helpers                                       */
 /* ---------------------------------------------------- */
@@ -17,7 +16,6 @@ function autoResize(textarea) {
   textarea.style.height = "auto";
   textarea.style.height = textarea.scrollHeight + "px";
 }
-
 /* ---------------------------------------------------- */
 /*  Safe message formatting                            */
 /* ---------------------------------------------------- */
@@ -47,7 +45,6 @@ function formatMessage(text) {
   escaped = escaped.replace(/\n/g, "<br>");
   return escaped;
 }
-
 /* ---------------------------------------------------- */
 /*  Message rendering                                  */
 /* ---------------------------------------------------- */
@@ -71,33 +68,54 @@ function appendMessage(role, content, isTyping = false) {
   chatbox.scrollTop = chatbox.scrollHeight; // keep scrolled to bottom
   return msgDiv;
 }
-
 /* ==================================================== */
 /*  NEW: Helper that returns the current identifier   */
 /* ==================================================== */
 /**
- * Returns the identifier that should be sent to the server.
- *
- * If a user is logged in, it returns the 64-digit account number
- * stored in `sessionStorage` under the key `User`.
- * Otherwise it falls back to the old session ID logic.
- */
+* Returns the identifier that should be sent to the server.
+*
+* If a user is logged in, it returns the 64-digit account number
+* stored in `sessionStorage` under the key `User`.
+* Otherwise it falls back to the old session ID logic.
+*/
 function getIdentity() {
   // 1??  Signed-in user ?
   const signedInAcc = sessionStorage.getItem("User");
   if (signedInAcc) return signedInAcc;   // 64-digit account number
-
-  // 2??  No user – use the original session ID
+  // 2??  No user â€“ use the original session ID
   return getSessionId();
 }
-
+function isLoggedIn() {
+  return !!sessionStorage.getItem("User");
+}
+function applyModelPermissions() {
+  const select = document.getElementById("modelSelect");
+  const btn = document.getElementById("changeModelBtn");
+  if (!isLoggedIn()) {
+    // Force Qwen 3 4B for guests
+    select.value = "qwen3_4b";
+    const qwen = modelList.find(m => m.value === "qwen3_4b");
+    if (btn && qwen) btn.textContent = qwen.name;
+    // Optional: prevent opening full model modal
+    if (btn) {
+      btn.onclick = () => {
+        openModelModal(); // or replace with "login required" if you want stricter
+      };
+    }
+  } else {
+    // Signed-in users keep normal behavior
+    const current = modelList.find(m => m.value === select.value);
+    if (btn && current) btn.textContent = current.name;
+  }
+}
 /* ==================================================== */
-/*  SEND MESSAGE – updated to use getIdentity()        */
+/*  SEND MESSAGE â€“ updated to use getIdentity()        */
 /* ==================================================== */
 function sendMessage() {
   const userInput = document.getElementById("userInput");
   const message = userInput.value.trim();
   const model = document.getElementById("modelSelect").value;
+
   if (!message) return;
 
   // Create a new chat on first message
@@ -111,54 +129,141 @@ function sendMessage() {
   appendMessage("user", message);
 
   const typingDiv = appendMessage("assistant", "...", true);
+
   userInput.value = "";
   autoResize(userInput);
 
-  /* ----------  NEW: Use getIdentity() ---------- */
   fetch("/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       message,
       model,
-      sessionId: getIdentity(),   // <-- swapped
+      sessionId: getIdentity(),
       chatId: chat.chatId
     })
   })
-    .then(async res => {
-      const data = await res.json();
-      if (res.status === 429) {
-        typingDiv.innerHTML = `<p class="error">${data.message}</p>`;
+    .then(async (res) => {
+      const contentType = res.headers.get("content-type") || "";
+
+      /* ====================================================
+         CASE 1: NON-STREAMING (normal JSON response)
+      ==================================================== */
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+
+        if (res.status === 429) {
+          typingDiv.innerHTML = `<p class="error">${data.message}</p>`;
+          return;
+        }
+
+        let output = "";
+
+        // image response
+        if (data.imageUrl) {
+          const imgSrc = data.imageUrl.startsWith("data:image/")
+            ? data.imageUrl
+            : `data:image/png;base64,${data.imageUrl}`;
+
+          typingDiv.innerHTML = `
+            <div class="message-content">
+              <img src="${imgSrc}" class="generated-image">
+            </div>
+          `;
+
+          chat.messages.push({ role: "assistant", content: imgSrc });
+          updateChatHistory();
+          return;
+        }
+
+        // text response
+        output = data.message || data.content || "";
+
+        typingDiv.innerHTML = `
+          <div class="message-content">
+            ${formatMessage(output)}
+          </div>
+        `;
+
+        chat.messages.push({ role: "assistant", content: output });
+        updateChatHistory();
         return;
       }
-      if (data.imageUrl) {
-        const imgSrc = data.imageUrl.startsWith("data:image/")
-          ? data.imageUrl
-          : `data:image/png;base64,${data.imageUrl}`;
-        typingDiv.innerHTML = `
-          <div class="message-content">
-            <img src="${imgSrc}" class="generated-image">
-          </div>
-        `;
-        chat.messages.push({ role: "assistant", content: imgSrc });
-      } else {
-        typingDiv.innerHTML = `
-          <div class="message-content">
-            ${formatMessage(data.message)}
-          </div>
-        `;
-        chat.messages.push({ role: "assistant", content: data.message });
+
+      /* ====================================================
+         CASE 2: STREAMING RESPONSE (token-based models)
+      ==================================================== */
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+
+        for (let line of lines) {
+          line = line.trim();
+          if (!line.startsWith("data:")) continue;
+
+          const jsonStr = line.replace("data:", "").trim();
+          if (!jsonStr) continue;
+
+          try {
+            const obj = JSON.parse(jsonStr);
+
+            // token streaming
+            if (obj.type === "token") {
+              fullText += obj.token;
+            }
+
+            // full message fallback
+            else if (obj.type === "full") {
+              fullText = obj.data;
+            }
+
+            // other model formats
+            else if (obj.message) {
+              fullText = obj.message;
+            }
+
+            else if (obj.content) {
+              fullText = obj.content;
+            }
+
+            // live render
+            typingDiv.innerHTML = `
+              <div class="message-content">
+                ${formatMessage(fullText)}
+              </div>
+            `;
+          } catch (e) {
+            console.warn("Failed to parse chunk:", jsonStr);
+          }
+        }
       }
+
+      // final save
+      chat.messages.push({
+        role: "assistant",
+        content: fullText
+      });
+
       updateChatHistory();
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       typingDiv.innerHTML = `<p class="error">Error getting response</p>`;
     });
 }
-
 /* ==================================================== */
-/*  CHAT HISTORY (unchanged)                           */
+/*  CHAT HISTORY (updated with delete functionality)   */
 /* ==================================================== */
 function startNewChat() {
   chats.push({ chatId: crypto.randomUUID(), messages: [] });
@@ -166,6 +271,7 @@ function startNewChat() {
   document.getElementById("chatbox").innerHTML = "";
   updateChatHistory();
 }
+
 function updateChatHistory() {
   const historyDiv = document.getElementById("chatHistory");
   historyDiv.innerHTML = "";
@@ -178,12 +284,24 @@ function updateChatHistory() {
     item.textContent =
       preview.slice(0, 30) + (preview.length > 30 ? "..." : "");
     item.onclick = () => loadChat(index);
+    
+    // Add delete button
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.innerHTML = "X";
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation(); // Prevent triggering chat load
+      deleteChat(index);
+    };
+    
+    item.appendChild(deleteBtn);
     historyDiv.appendChild(item);
   });
   if (!historyDiv.innerHTML.trim()) {
     historyDiv.innerHTML = "<p>No previous chats</p>";
   }
 }
+
 function loadChat(index) {
   currentChatIndex = index;
   const chatbox = document.getElementById("chatbox");
@@ -193,8 +311,21 @@ function loadChat(index) {
   );
 }
 
+function deleteChat(index) {
+  // Remove chat from memory
+  chats.splice(index, 1);
+  
+  // If we're deleting the current chat, reset to null
+  if (index === currentChatIndex) {
+    currentChatIndex = null;
+    document.getElementById("chatbox").innerHTML = "";
+  }
+  
+  // Update UI
+  updateChatHistory();
+}
 /* ==================================================== */
-/*  SESSION ID (unchanged) – kept for legacy fallback  */
+/*  SESSION ID (unchanged) â€“ kept for legacy fallback  */
 /* ==================================================== */
 function getSessionId() {
   if (!sessionStorage.getItem("sessionId")) {
@@ -202,7 +333,6 @@ function getSessionId() {
   }
   return sessionStorage.getItem("sessionId");
 }
-
 /* ==================================================== */
 /*  COPY BUTTON HANDLER (unchanged)                    */
 /* ==================================================== */
@@ -215,7 +345,6 @@ document.addEventListener("click", e => {
     setTimeout(() => (e.target.textContent = "Copy"), 1200);
   }
 });
-
 /* ==================================================== */
 /*  MODEL SELECTION (unchanged)                        */
 /* ==================================================== */
@@ -234,7 +363,6 @@ const modelList = [
 const modal = document.getElementById("modelModal");
 const grid = document.getElementById("modelGrid");
 const search = document.getElementById("modelSearch");
-
 function openModelModal() {
   modal.style.display = "block";
   search.value = "";
@@ -246,9 +374,10 @@ function closeModelModal() {
 }
 function renderModelCards(filter = "") {
   grid.innerHTML = "";
-  const filtered = modelList.filter(m =>
+  let filtered = modelList.filter(m =>
     m.name.toLowerCase().includes(filter.toLowerCase())
   );
+  // ?? restrict for guests
   filtered.forEach(m => {
     const card = document.createElement("div");
     card.className = "model-card";
@@ -272,7 +401,6 @@ function selectModel(value) {
   btn.textContent = chosen ? chosen.name : "Change Model";
   closeModelModal();
 }
-
 /* ==================================================== */
 /*  EVENT LISTENERS (unchanged)                         */
 /* ==================================================== */
@@ -281,8 +409,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (changeBtn) {
     changeBtn.addEventListener("click", openModelModal);
   }
-  const closeBtn = document.getElementById("closeBtn") || document.querySelector("#modelModal .content > button:first-of-type");
+  const closeBtn =
+    document.getElementById("closeBtn") ||
+    document.querySelector("#modelModal .content > button:first-of-type");
   if (closeBtn) {
     closeBtn.addEventListener("click", closeModelModal);
   }
+  // NEW ?? apply login-based model rules
+  applyModelPermissions();
 });

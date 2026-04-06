@@ -73,6 +73,35 @@
       font-size: 1.5rem;
       cursor: pointer;
     }
+    
+    /* Chat history styling */
+    .chat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    .chat-item:hover {
+      background-color: #f5f5f5;
+    }
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #ff4757;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .delete-btn:hover {
+      color: #ff2e43;
+    }
   </style>
 </head>
 <body>
@@ -81,31 +110,28 @@
       <div class="sidebar-header">
         <div class="new-chat-row">
           <button onclick="startNewChat()">+ New Chat</button>
-
           <!-- hidden <select> that the rest of the code uses -->
           <select id="modelSelect" style="display:none">
-  	<!-- All your models – first one is the default -->
-  	   <option value="gpt_oss_20b" selected>GPT-OSS</option>
-  	   <option value="gemma3_27b">Gemma-3 27B</option>
-  	   <option value="gemma3_1b">Gemma-3 1B</option>
-  	   <option value="qwen3_coder_30b">Qwen-3-Coder 30B</option>
-  	   <option value="qwen3_4b">Qwen-3 4B</option>
-  	   <option value="llama3_1_8b">Llama-3.1 8B</option>
-	   <option value="Chan_AI_Uncensored">Chan AI 4B</option>
-	   <option value="LinguaTale_EN_ES">LinguaTale-EN-ES</option>
-	   <option value="z_image">Qwen Z Image</option>
+   <!-- All your models â€“ first one is the default -->
+      <option value="gpt_oss_20b" selected>GPT-OSS</option>
+      <option value="gemma3_27b">Gemma-3 27B</option>
+      <option value="gemma3_1b">Gemma-3 1B</option>
+      <option value="qwen3_coder_30b">Qwen-3-Coder 30B</option>
+      <option value="qwen3_4b">Qwen-3 4B</option>
+      <option value="llama3_1_8b">Llama-3.1 8B</option>
+   <option value="Chan_AI_Uncensored">Chan AI 4B</option>
+   <option value="LinguaTale_EN_ES">LinguaTale-EN-ES</option>
+   <option value="z_image">Qwen Z Image</option>
           </select>
           <!-- button that opens the modal -->
           <button id="changeModelBtn" onclick="openModelModal()">Change Model</button>
         </div>
       </div>
-
       <div class="sidebar-label">Previous Chats</div>
       <div class="chat-history" id="chatHistory">
         <p>No previous chats</p>
       </div>
     </div>
-
     <div class="container">
       <div class="chatbox" id="chatbox"></div>
       <div class="input-area" id="inputArea">
@@ -115,20 +141,18 @@
       </div>
     </div>
   </div>
-
   <!-- The modal that shows the grid of models -->
   <div id="modelModal" class="model-modal">
     <div class="content">
       <button class="close-btn" onclick="closeModelModal()">&times;</button>
       <h2>Select a model</h2>
       <input type="text" id="modelSearch" class="model-search"
-             placeholder="Search models…" oninput="filterModels()">
+             placeholder="Search models..." oninput="filterModels()">
       <div class="model-grid" id="modelGrid">
         <!-- cards are inserted by JS -->
       </div>
     </div>
   </div>
-
   <footer class="footer" id="footer">
     <div class="footer-content">
       <span><a href="/tos" target="_blank">Terms of Service</a></span>
@@ -139,7 +163,6 @@
   onclick="document.getElementById('footer').style.display='none'">
   &times;
 </button>  </footer>
-
   <script src="/script.js"></script>
 </body>
 </html>

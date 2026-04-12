@@ -102,6 +102,61 @@
     .delete-btn:hover {
       color: #ff2e43;
     }
+    .thinking-wrapper {
+      margin-bottom: 0.75rem;
+    }
+
+    .thinking-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #888;
+      user-select: none;
+    }
+
+    .thinking-toggle:hover {
+      color: #555;
+    }
+
+    /* Strobing dot */
+    .thinking-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #aaa;
+      animation: throb 1.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes throb {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.3; transform: scale(0.75); }
+    }
+
+    /* Hidden by default, revealed on .open */
+    .thinking-content {
+      display: none;
+      margin-top: 0.5rem;
+      padding: 0.6rem 0.85rem;
+      background: #181818;
+      border-left: 3px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .thinking-wrapper.open .thinking-content {
+      display: block;
+    }
+
+    /* Stop the dot animation once expanded */
+    .thinking-wrapper.open .thinking-dot {
+      animation: none;
+      background: #888;
+    }
   </style>
 </head>
 <body>
@@ -117,7 +172,7 @@
       <option value="gemma3_27b">Gemma-3 27B</option>
       <option value="gemma3_1b">Gemma-3 1B</option>
       <option value="qwen3_coder_30b">Qwen-3-Coder 30B</option>
-      <option value="qwen3_4b">Qwen-3 4B</option>
+      <option value="qwen3_30b_a3b">Qwen-3 30B-a3B</option>
       <option value="llama3_1_8b">Llama-3.1 8B</option>
    <option value="Chan_AI_Uncensored">Chan AI 4B</option>
    <option value="LinguaTale_EN_ES">LinguaTale-EN-ES</option>

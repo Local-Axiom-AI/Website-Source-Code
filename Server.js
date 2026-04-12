@@ -308,7 +308,7 @@ const validModels = {
   gemma3_27b: true,
   gemma3_1b: true,
   qwen3_coder_30b: true,
-  qwen3_4b: true,
+  qwen3_30b_a3b: true,
   llama3_1_8b: true,
   Chan_AI_Censored: true,
   Chan_AI_Uncensored: true,
@@ -567,7 +567,7 @@ app.post('/ask', async (req, res) => {
     // ==================================================
     // 🔐 STREAMING PATH
     // ==================================================
-    if (cleanModel === 'qwen3_4b') {
+    if (cleanModel === 'qwen3_30b_a3b') {
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
@@ -737,7 +737,7 @@ app.post('/api/chat', async (req, res) => {
     /* ==================================================
        🚀 SPECIAL FAST PATH (NO QUEUE)
        ================================================== */
-    if (cleanModel === "qwen3_4b") {
+    if (cleanModel === "qwen3_30b_a3b") {
       try {
         const payload = {
           model: cleanModel,

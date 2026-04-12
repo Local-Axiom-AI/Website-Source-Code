@@ -27,7 +27,24 @@ function escapeHtml(str) {
 }
 function formatMessage(text) {
   if (!text) return "";
+
+  // Handle <think>...</think> blocks BEFORE escaping
+  let thinkingHtml = "";
+  text = text.replace(/<think>([\s\S]*?)<\/think>/gi, (_, inner) => {
+    const escaped = escapeHtml(inner.trim());
+    thinkingHtml = `
+      <div class="thinking-wrapper">
+        <span class="thinking-toggle" onclick="this.closest('.thinking-wrapper').classList.toggle('open')">
+          <span class="thinking-dot"></span>Thinking...
+        </span>
+        <div class="thinking-content">${escaped.replace(/\n/g, "<br>")}</div>
+      </div>
+    `;
+    return ""; // remove from main text
+  });
+
   let escaped = escapeHtml(text);
+
   // Code blocks ```...```
   escaped = escaped.replace(/```([\s\S]*?)```/g, (_, code) => `
     <div class="code-block">
@@ -37,14 +54,46 @@ function formatMessage(text) {
       </div>
     </div>
   `);
+
   // Inline code `...`
   escaped = escaped.replace(/`([^`]+)`/g, `<span class="inline-code">$1</span>`);
+
   // Bold **...**
   escaped = escaped.replace(/\*\*(.*?)\*\*/g, `<strong>$1</strong>`);
+
   // Newlines
   escaped = escaped.replace(/\n/g, "<br>");
-  return escaped;
+
+  return thinkingHtml + escaped;
 }
+
+function formatStreamMessage(text) {
+  if (!text) return "";
+
+  const thinkStart = text.indexOf("<think>");
+  const thinkEnd   = text.indexOf("</think>");
+
+  // No thinking block at all — render normally
+  if (thinkStart === -1) return formatMessage(text);
+
+  // <think> found but </think> not yet arrived — still thinking
+  if (thinkEnd === -1) {
+    const before = text.slice(0, thinkStart);
+    // Don't show the partial inner content, just the strobing indicator
+    return `
+      ${formatMessage(before)}
+      <div class="thinking-wrapper">
+        <span class="thinking-toggle">
+          <span class="thinking-dot"></span>Thinking...
+        </span>
+      </div>
+    `;
+  }
+
+  // Both tags present — render the collapsible block as normal
+  return formatMessage(text);
+}
+
 /* ---------------------------------------------------- */
 /*  Message rendering                                  */
 /* ---------------------------------------------------- */
@@ -92,9 +141,9 @@ function applyModelPermissions() {
   const select = document.getElementById("modelSelect");
   const btn = document.getElementById("changeModelBtn");
   if (!isLoggedIn()) {
-    // Force Qwen 3 4B for guests
-    select.value = "qwen3_4b";
-    const qwen = modelList.find(m => m.value === "qwen3_4b");
+    // Force qwen3_30b_a3b for guests
+    select.value = "qwen3_30b_a3b";
+    const qwen = modelList.find(m => m.value === "qwen3_30b_a3b");
     if (btn && qwen) btn.textContent = qwen.name;
     // Optional: prevent opening full model modal
     if (btn) {
@@ -240,7 +289,7 @@ function sendMessage() {
             // live render
             typingDiv.innerHTML = `
               <div class="message-content">
-                ${formatMessage(fullText)}
+                ${formatStreamMessage(fullText)}
               </div>
             `;
           } catch (e) {
@@ -353,7 +402,7 @@ const modelList = [
   { value: "gpt_oss_20b", name: "GPT-OSS 20B", desc: "Open-source general LLM.", img: "https://local-axiom.com/Gpt_oss_logo.jpg" },
   { value: "gemma3_27b", name: "Gemma3 27B", desc: "High-quality reasoning model.", img: "https://local-axiom.com/Gemma_logo.jpg" },
   { value: "gemma3_1b", name: "Gemma3 1B", desc: "Fast lightweight model.", img: "https://local-axiom.com/Gemma_logo.jpg" },
-  { value: "qwen3_4b", name: "Qwen-3 4B", desc: "Efficient general model.", img: "https://local-axiom.com/Qwen_logo.png" },
+  { value: "qwen3_30b_a3b", name: "Qwen-3 30B-a3B", desc: "Efficient general model.", img: "https://local-axiom.com/Qwen_logo.png" },
   { value: "qwen3_coder_30b", name: "Qwen-3-Coder 30B", desc: "Code-focused model.", img: "https://local-axiom.com/Qwen_logo.png" },
   { value: "llama3_1_8b", name: "LLaMA-3.1 8B", desc: "Balanced performance.", img: "https://local-axiom.com/llama_3_logo.jpg" },
   { value: "Chan_AI_Uncensored", name: "Chan AI 4B", desc: "Unfiltered style model.", img: "https://local-axiom.com/Chan_logo.png" },
